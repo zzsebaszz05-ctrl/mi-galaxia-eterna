@@ -7,18 +7,27 @@
   <style>
     html,body{margin:0;height:100%;background:#000;overflow:hidden}
     #galaxy-canvas{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none}
+    
+    /* 1. OCULTAR EL REPRODUCTOR BLANCO DEL NAVEGADOR */
+    audio {
+      display: none !important;
+      visibility: hidden !important;
+      height: 0 !important;
+      width: 0 !important;
+      position: absolute;
+      z-index: -1;
+    }
+
     .attribution{position:fixed;left:10px;bottom:10px;font-size:11px;color:#a0c4ff;opacity:.8;background:rgba(0,0,0,.35);padding:6px 8px;border-radius:8px}
     
-    /* Estilo del reproductor personalizado - Sin la barra blanca */
     .player{position:fixed;left:10px;right:10px;bottom:10px;display:flex;gap:8px;align-items:center;
-             background:rgba(15,20,35,.4);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:8px;
-             backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial}
+             background:rgba(15,20,35,.35);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:8px;
+             backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial;
+             z-index: 20;}
+    
     .player button{padding:8px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;cursor:pointer}
     .player input[type=file]{display:none}
     
-    /* Ocultamos CUALQUIER reproductor nativo que el navegador intente mostrar */
-    audio { display: none !important; visibility: hidden; }
-
     .pill{position:fixed;top:10px;left:50%;transform:translateX(-50%);padding:6px 12px;border-radius:999px;
           background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);color:#fff;font:12px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial; z-index: 10;}
     .error{position:fixed;inset:auto 10px 70px 10px;background:#001526;color:#d9f0ff;border:1px solid #8aceff;border-radius:10px;padding:10px;font:12px system-ui;display:none;}
@@ -27,6 +36,7 @@
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 </head>
 <body>
+
 <canvas id="galaxy-canvas"></canvas>
 <div class="pill">Te Amo Muchote, Mis Ojitos Brillantes Bleh💙</div>
 <div class="attribution">Base: tlanex · Adaptación para Jotab 💫</div>
@@ -64,7 +74,7 @@ playBtn.onclick = async () => {
       audio.pause(); 
       playBtn.textContent='▶︎'; 
     } 
-  } catch(e){ showError('Toca "Elegir canción" para cargar tu música.'); }
+  } catch(e){ showError('Selecciona tu MP3 para iniciar.'); }
 };
 
 pickBtn.onclick = () => pickFile.click();
@@ -76,10 +86,9 @@ pickFile.onchange = () => {
   }
 };
 
-// --- LÓGICA DE THREE.JS (CORREGIDA PARA EL ARO) ---
 try { 
   const canvas = document.getElementById('galaxy-canvas');
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias:true, alpha:false, logarithmicDepthBuffer: true });
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias:true, logarithmicDepthBuffer: true });
   renderer.setPixelRatio(Math.min(2, window.devicePixelRatio||1));
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.outputEncoding = THREE.sRGBEncoding;
@@ -88,7 +97,6 @@ try {
   const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 2000);
   const controls = new THREE.OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
-  controls.minDistance = 10; controls.maxDistance = 220;
 
   function setCam(){
     const isMobile = window.innerWidth < 768;
@@ -97,87 +105,47 @@ try {
     camera.updateProjectionMatrix();
   } setCam(); window.addEventListener('resize', setCam);
 
-  // Estrellas de fondo
-  function makePrettyStarTexture() {
-    const c = document.createElement('canvas'); c.width = c.height = 1024;
-    const g = c.getContext('2d');
-    const grd = g.createRadialGradient(512,512,100, 512,512,512);
-    grd.addColorStop(0,'#000510'); grd.addColorStop(1,'#000000');
-    g.fillStyle = grd; g.fillRect(0,0,1024,1024);
-    for (let i=0;i<2000;i++) {
-      g.fillStyle = `rgba(255,255,255,${Math.random()})`;
-      g.beginPath(); g.arc(Math.random()*1024, Math.random()*1024, Math.random()*1.5, 0, Math.PI*2); g.fill();
-    }
-    return new THREE.CanvasTexture(c);
-  }
-
-  const bg = new THREE.Mesh(new THREE.SphereGeometry(600, 64, 64), new THREE.MeshBasicMaterial({ map: makePrettyStarTexture(), side: THREE.BackSide }));
+  // Fondo y Galaxia
+  const bg = new THREE.Mesh(new THREE.SphereGeometry(600, 32, 32), new THREE.MeshBasicMaterial({ color: 0x000510, side: THREE.BackSide }));
   scene.add(bg);
 
   const galaxy = new THREE.Group(); scene.add(galaxy);
-  const phrases = ["Pinchecha ✨", " Hermosa 💙", "Mi Bebe", "Mi Cielito 🌌", "Hermosota ✨", "Mi Todo", "Me Encantas 🥰", "Te Amo💙", "Mi Reina 👑", "Mi Amor", "Mi Niña", "Mi Tesoro💙", "Mi Paz"];
+  const phrases = ["Pinchecha ✨", " Hermosa 💙", "Mi Bebe", "Mi Todo", "Te Amo💙", "Mi Amor"];
   
   function makeTextTexture(text){
     const c=document.createElement('canvas'); c.width=512; c.height=64;
     const g=c.getContext('2d');
-    g.font='bold 32px sans-serif'; g.textAlign='center'; g.textBaseline='middle';
-    g.fillStyle='white'; g.fillText(text,256,32);
+    g.font='bold 32px sans-serif'; g.textAlign='center'; g.fillStyle='white';
+    g.fillText(text,256,40);
     return new THREE.CanvasTexture(c);
   }
 
-  for(let i=0;i<150;i++){
+  for(let i=0;i<100;i++){
     const spr=new THREE.Sprite(new THREE.SpriteMaterial({ map:makeTextTexture(phrases[i%phrases.length]), transparent:true, depthWrite:false }));
-    const dist=Math.random()*80 + 10; const ang=Math.random()*Math.PI*2;
-    spr.position.set(Math.cos(ang)*dist, (Math.random()-0.5)*15, Math.sin(ang)*dist);
+    const dist=Math.random()*70 + 15; const ang=Math.random()*Math.PI*2;
+    spr.position.set(Math.cos(ang)*dist, (Math.random()-0.5)*10, Math.sin(ang)*dist);
     spr.scale.set(12,1.5,1); galaxy.add(spr);
   }
 
-  // Agujero negro y ARO (Sin parpadeo)
-  const core = new THREE.Mesh(new THREE.SphereGeometry(12, 64, 64), new THREE.MeshBasicMaterial({ color: 0x000212 }));
+  // Agujero negro y ARO arreglado
+  const core = new THREE.Mesh(new THREE.SphereGeometry(12, 32, 32), new THREE.MeshBasicMaterial({ color: 0x000000 }));
   scene.add(core);
 
-  const photonRing = new THREE.Mesh(new THREE.RingGeometry(13, 15, 128), new THREE.MeshBasicMaterial({ color: 0xAECEFF, side: THREE.DoubleSide, transparent: true, opacity: 0.9 }));
+  const photonRing = new THREE.Mesh(new THREE.RingGeometry(13, 14.5, 64), new THREE.MeshBasicMaterial({ color: 0xAECEFF, side: THREE.DoubleSide, transparent:true, opacity:0.8 }));
   photonRing.rotation.x = Math.PI/2;
-  photonRing.position.y = 0.05; // Desfase para evitar parpadeo
+  photonRing.position.y = 0.1; // Evita el parpadeo
   scene.add(photonRing);
 
   function animate(){
     requestAnimationFrame(animate);
-    const t = performance.now()*0.0005;
-    galaxy.rotation.y = t * 0.1;
-    photonRing.rotation.z = t * 0.5;
+    galaxy.rotation.y += 0.001;
+    photonRing.rotation.z += 0.005;
     controls.update();
     renderer.render(scene, camera);
   } animate();
-
-  // EFECTO CORAZONES
-  const fx = document.getElementById('fx');
-  const ctx2 = fx.getContext('2d');
-  function resizeFx(){ fx.width=window.innerWidth; fx.height=window.innerHeight; }
-  window.addEventListener('resize', resizeFx); resizeFx();
-  
-  let hearts = [];
-  function spawnHearts(x,y){
-    for(let i=0;i<15;i++){
-      hearts.push({x, y, vx:(Math.random()-0.5)*4, vy:(Math.random()-0.5)*4, life:1});
-    }
-  }
-  window.addEventListener('click', (e)=>spawnHearts(e.clientX, e.clientY));
-
-  function loopFx(){
-    ctx2.clearRect(0,0,fx.width,fx.height);
-    hearts.forEach((h,i)=>{
-      h.x+=h.vx; h.y+=h.vy; h.life-=0.02;
-      ctx2.fillStyle=`rgba(144,202,249,${h.life})`;
-      ctx2.font="20px serif"; ctx2.fillText("💙", h.x, h.y);
-      if(h.life<=0) hearts.splice(i,1);
-    });
-    requestAnimationFrame(loopFx);
-  } loopFx();
 
 } catch(e) { console.error(e); }
 })();
 </script>
 </body>
 </html>
-
