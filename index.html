@@ -8,17 +8,20 @@
         /* Ajustes para que la galaxia ocupe toda la pantalla */
         body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; background-color: #000; }
         
-        /* Estilo del reproductor para que combine con el morado de tu galaxia */
+        /* ESTILO DEL REPRODUCTOR ACTUALIZADO A AZUL INTENSO */
         #reproductor-fijo {
             position: fixed;
             bottom: 20px;
             left: 50%;
             transform: translateX(-50%);
             z-index: 9999;
-            background: rgba(75, 0, 130, 0.5); /* Un toque morado traslúcido */
-            padding: 8px;
+            /* Cambiado de morado a un azul profundo con brillo */
+            background: rgba(0, 40, 100, 0.6); 
+            padding: 10px;
             border-radius: 50px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            /* Borde azul neón intenso */
+            border: 2px solid rgba(0, 162, 255, 0.8);
+            box-shadow: 0 0 15px rgba(0, 162, 255, 0.5); /* Efecto de brillo azul */
         }
 
         iframe {
